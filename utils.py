@@ -30,7 +30,7 @@ def create_description(file_path, description) -> str:
     ''':returns путь к созданному файлу описания'''
     basename, extension = os.path.splitext(file_path)
 
-    description_file_path = f"{basename}.json" # Т.к. json мы не сохраняем, не добавляем к названию файла ничего лишнего
+    description_file_path = f"Files/{basename}.json" # Т.к. json мы не сохраняем, не добавляем к названию файла ничего лишнего
     #подсказки если че я пишу
     with open(description_file_path, "w") as f:
         json.dump({"description": description, "previous extension":f"{extension}"}, f)
@@ -49,3 +49,15 @@ def try_get_description(file_path) -> str | None:
         description = json.load(f)
 
     return description
+
+def try_search_file(query) -> str | None:
+    found = False
+    file = None
+
+    for file in os.listdir("Files"):
+        if query in file:
+            found = True
+            break
+
+    if found:
+        return f"Files/{file}"
