@@ -13,24 +13,6 @@ class FileWithDescription:
         self.file_path = file_path
         self.description = description
 
-
-def try_generate_description_for_file(file_path) -> str | None:
-    basename, extension = os.path.splitext(file_path)
-
-    if extension in config.convertable_to_pdf: #конвертируем в pdf если формат подерживается
-        pypandoc.convert_file(file_path, 'pdf', outputfile=f"{basename}-converted-{uuid.uuid4()[:6]}.pdf")
-        file_path = f"{basename}-converted-{uuid.uuid4()[:6]}.pdf"
-        basename, extension = os.path.splitext(file_path)
-
-    if extension not in config.allowed_extensions: #если формат не поддерживается, выходим
-        return
-
-    file_path = gm.upload_file(file_path) #загружаем файл в гугл и запоминаем
-    answer = gm.generate(config.prompt, images=[file_path])
-    file_path.delete() #после получении описания удаляем загруженный файл
-
-    return answer
-
 def create_description(file_path, description) -> str:
     ''':returns путь к созданному файлу описания'''
     basename, extension = os.path.splitext(file_path)

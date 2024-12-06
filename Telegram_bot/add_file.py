@@ -20,4 +20,3 @@ def add_file(bot: telebot.TeleBot, message: telebot.types.Message):
             row = []
 
     bot.send_message(message.chat.id, "Выбирите предмет", reply_markup=keyword_add_file)
-#куда?
