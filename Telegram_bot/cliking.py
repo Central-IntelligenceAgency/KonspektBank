@@ -1,15 +1,14 @@
 import sys
 import os
-
-# Устанавливаем путь к модулю
-sys.path.append(os.path.abspath('../KonspektBank'))
-
 import telebot
+
 from telebot import types
 from search_notes import create_keyboard
 from KonspektBank import GeminiModule  # Импортируем модуль
 from KonspektBank.utils import try_search_file, try_generate_description_for_file
 from text import *
+
+sys.path.append(os.path.abspath('../KonspektBank'))
 
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):

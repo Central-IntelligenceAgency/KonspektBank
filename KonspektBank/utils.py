@@ -50,14 +50,11 @@ def try_get_description(file_path) -> str | None:
 
     return description
 
-def try_search_file(query) -> str | None:
-    found = False
-    file = None
+def try_search_file(query) -> list:
+    files = []
 
     for file in os.listdir("Files"):
         if query in file:
-            found = True
-            break
+            files.append(f"Files\\{file}")
 
-    if found:
-        return f"Files/{file}"
+    return files
