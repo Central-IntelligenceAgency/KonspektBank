@@ -63,3 +63,11 @@ def try_search_files(query) -> list[FileWithDescription]:
             files.append(FileWithDescription(f"Files\\{file}", try_get_description(f"Files\\{file}")))
 
     return files
+
+def is_txt(file_path) -> bool:
+    try:
+        with open(file_path, "r") as f:
+            f.readline()
+            return True
+    except:
+        return False
