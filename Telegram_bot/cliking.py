@@ -2,13 +2,13 @@ import sys
 import os
 import telebot
 
+sys.path.append(os.path.abspath('../KonspektBank'))
+
 from telebot import types
 from search_notes import create_keyboard
 from KonspektBank import GeminiModule  # Импортируем модуль
 from KonspektBank.utils import try_search_files, try_generate_description_for_file
 from text import *
-
-sys.path.append(os.path.abspath('../KonspektBank'))
 
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
@@ -30,7 +30,17 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         create_keyboard(bot, call.message)
 
     if call.data == 'find_sum':
-        pass
+        file_paths = try_search_files(subject.split(' ')[0])
+        for file in file_paths:
+            with open(file.file_path, "rb") as files:
+                bot.send_document(call.message.chat.id, files, None,
+                                  f"Описание: {file.description["description"]}")
+        if not file_paths:
+            bot.send_message(call.message.chat.id, "Файла нету (")
+
+    if call.data == "add_file":
+        bot.send_message("")
+
 
     if call.data == 'exit':
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -40,6 +50,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
 
         if file_paths:
             bot.send_message(call.message.chat.id, f"Вот конспекты по {subject}:\n")
+            bot.send_photo()
 
             response_text = subject_file_map[subject][0]
             bot.send_message(call.message.chat.id, response_text)
