@@ -5,7 +5,7 @@ import telebot
 from telebot import types
 from search_notes import create_keyboard
 from KonspektBank import GeminiModule  # Импортируем модуль
-from KonspektBank.utils import try_search_file, try_generate_description_for_file
+from KonspektBank.utils import try_search_files, try_generate_description_for_file
 from text import *
 
 sys.path.append(os.path.abspath('../KonspektBank'))
@@ -36,12 +36,10 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         bot.delete_message(call.message.chat.id, call.message.message_id)
 
     if subject in subject_file_map:
-        file_path = try_search_file(subject.split(' ')[0])
+        file_paths = try_search_files(subject.split(' ')[0])
 
-        if file_path:
-            description = try_generate_description_for_file(file_path)
-
-            bot.send_message(call.message.chat.id, f"Вот конспекты по {subject}:\n{file_path}")
+        if file_paths:
+            bot.send_message(call.message.chat.id, f"Вот конспекты по {subject}:\n")
 
             response_text = subject_file_map[subject][0]
             bot.send_message(call.message.chat.id, response_text)

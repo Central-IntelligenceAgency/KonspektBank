@@ -55,7 +55,7 @@ def try_get_description(file_path) -> str | None:
 
     return description
 
-def try_search_file(query) -> list:
+def try_search_files(query) -> list[FileWithDescription]:
     files = []
 
     for file in os.listdir("Files"):
