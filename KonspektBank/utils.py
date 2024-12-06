@@ -8,6 +8,11 @@ import json
 
 gm = GeminiModule(config.proxy, config.gemini_token)
 
+class FileWithDescription:
+    def __init__(self, file_path, description):
+        self.file_path = file_path
+        self.description = description
+
 
 def try_generate_description_for_file(file_path) -> str | None:
     basename, extension = os.path.splitext(file_path)
@@ -55,6 +60,6 @@ def try_search_file(query) -> list:
 
     for file in os.listdir("Files"):
         if query in file:
-            files.append(f"Files\\{file}")
+            files.append(FileWithDescription(f"Files\\{file}", try_get_description(f"Files\\{file}")))
 
     return files
