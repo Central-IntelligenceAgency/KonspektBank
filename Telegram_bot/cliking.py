@@ -2,20 +2,16 @@ import sys
 import os
 import uuid
 import telebot
-
-sys.path.append(os.path.abspath('../KonspektBank'))
-from typing import Any
 from telebot import types
-#from search_notes import create_keyboard
-from KonspektBank import GeminiModule  # Импортируем модуль
 from time import sleep
-from KonspektBank.utils import try_search_files, create_description
+from utils import try_search_files, create_description
 from text import *
 from Attachments import Photo, Document, Attachment
 
-last_messages:dict[int, telebot.types.Message] = {} #chatid:last_message
+last_messages: dict[int, telebot.types.Message] = {}  #chatid:last_message
 unlimited_users_ids = []
 upload_limits = {}
+
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     subject_file_map = {
@@ -56,7 +52,6 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
                                   f"Описание: {file.description.get("description")}")
         flag = False
         print("Sent files")
-
 
     if call.data == 'find_sum':
         pass
@@ -106,11 +101,23 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
 
 
 def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment] | None:
+    def check_size(size) -> bool:
+        if message.from_user.id in unlimited_users_ids:
+            if size / 1024 / 1024 > 500:
+                bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
+                return False
+            return True
+        if size / 1024 / 1024 > 100:
+            bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
+            return False
+        return True
+
     attachments = []
+
     if message.photo:
         photo = message.photo[-1]
         file = bot.get_file(photo.file_id)
-        if file.file_size / 1024 / 1024 > 100:
+        if check_size(file.file_size):
             return
         downloaded_file = bot.download_file(file.file_path)
         attachments.append(Photo(downloaded_file, os.path.basename(file.file_path)))
@@ -118,7 +125,7 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     if message.document:
         document = message.document
         file = bot.get_file(document.file_id)
-        if file.file_size / 1024 / 1024 > 100:
+        if check_size(file.file_size):
             return
         downloaded_file = bot.download_file(file.file_path)
         attachments.append(Document(downloaded_file, os.path.basename(file.file_path)))
@@ -126,7 +133,7 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     return attachments
 
 
-def process_description(bot: telebot.TeleBot, message: types.Message, attachment:Attachment, id):
+def process_description(bot: telebot.TeleBot, message: types.Message, attachment: Attachment, id):
     description = message.text
     create_description(f"{id}-{attachment.name}", description)
     bot.send_message(message.chat.id, "Описание добавленно")

@@ -1,12 +1,6 @@
-from GeminiModule import GeminiModule
-import pypandoc
 import os
-import uuid
-import config
 import json
 
-
-gm = GeminiModule(config.proxy, config.gemini_token)
 
 class FileWithDescription:
     def __init__(self, file_path, description):
