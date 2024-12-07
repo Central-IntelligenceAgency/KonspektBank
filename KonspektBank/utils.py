@@ -30,9 +30,9 @@ def try_get_description(file_path) -> str | None:
 
     basename, extension = os.path.splitext(file_path)
 
-    description_file_path = f"{basename}.json"
+    description_file_path = f"{basename.split("-")[0]}-{basename.split("-")[2]}.json"
 
-    with open(description_file_path, "r") as f:
+    with open(f"{description_file_path}", "r") as f:
         description = json.load(f)
 
     return description

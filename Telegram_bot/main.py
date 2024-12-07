@@ -1,7 +1,7 @@
 import threading
 from menu import start_menu
 from qa_helper import qa_helper
-from cliking import callback_query
+from cliking import callback_query, last_messages
 
 import telebot
 
@@ -20,7 +20,13 @@ def start_helper(message: telebot.types.Message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call: telebot.types.CallbackQuery):
-    callback_query(call, bot)
+    threading.Thread(target=lambda:callback_query(call, bot)).start()
+
+
+@bot.message_handler(content_types=["text", "photo", "document"])
+def message_handler(message: telebot.types.Message):
+    last_messages[message.chat.id] = message
+    print(f"received message: {message.text}")
 
 
 if __name__ == "__main__":
