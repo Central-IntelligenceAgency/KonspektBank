@@ -61,10 +61,9 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         message = get_last_message(call)
         if message.text not in subject_answers_map:
             return
-        types.ReplyKeyboardRemove()
         subject = message.text.split(' ')[0]
         subjects = len(try_search_files(subject))
-        bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)")
+        bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)", reply_markup=types.ReplyKeyboardRemove())
         print("sent files count")
 
     if call.data == "add_file":
@@ -93,14 +92,15 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         message = get_last_message(call)
         if message.text not in subject_answers_map:
             return
-        types.ReplyKeyboardRemove()
+
         subject = message.text.split(' ')[0]
+        bot.send_message(call.message.chat.id, "Предмет выбран", reply_markup=types.ReplyKeyboardRemove())
+
         with open(f"Files\\{id}-{subject}-{attachment.name}", 'wb') as f:
             f.write(attachment.data)
 
         description = message.text
         create_description(f"{id}-{attachment.name}", description)
-        bot.send_message(message.chat.id, "Описание добавленно")
 
         if call.from_user.id not in upload_limits:
             upload_limits[call.from_user.id] = 1
@@ -161,7 +161,5 @@ def get_subject_buttons():
     for subject in subject_answers_map:
         btn = types.KeyboardButton(subject)
         row.append(btn)
-        #if len(row) == 6:
-        #    row = []
     return row
 
