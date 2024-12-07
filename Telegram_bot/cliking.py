@@ -12,32 +12,31 @@ last_messages: dict[int, telebot.types.Message] = {}  #chatid:last_message
 unlimited_users_ids = []
 upload_limits = {}
 
+subject_answers_map = {
+    "Биология 🔬": biology_replies,
+    "Химия 🧪": chemistry_replies,
+    "Физика ⚛️": physics_replies,
+    "Математика ➕": math_replies,
+    "История 📜": history_replies,
+    "Иностранный язык 🌍": foreign_language_replies,
+    "Обществознание 👥": social_studies_replies,
+    "География 🗺️": geography_replies,
+    "Экономика 📈": economics_replies,
+    "Психология 🧠": psychology_replies,
+}
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
-    subject_file_map = {
-        "Биология 🔬": biology_replies,
-        "Химия 🧪": chemistry_replies,
-        "Физика ⚛️": physics_replies,
-        "Математика ➕": math_replies,
-        "История 📜": history_replies,
-        "Иностранный язык 🌍": foreign_language_replies,
-        "Обществознание 👥": social_studies_replies,
-        "География 🗺️": geography_replies,
-        "Экономика": economics_replies,
-        "Психология": psychology_replies,
-    }
-
     if call.data == 'find_konspekt':
-        flag = True
-        keyboad_find = types.ReplyKeyboardMarkup(resize_keyboard=flag)
+        keyboad_find = types.ReplyKeyboardMarkup(is_persistent=True)
+
+        keyboad_find.add(*get_subject_buttons())
+
         bot.send_message(call.message.chat.id, "Выбирите предмет", reply_markup=keyboad_find)
 
-        row = get_buttons()
-        keyboad_find.add(*row)
-
         message = get_last_message(call)
-        if message.text not in subject_file_map:
+        if message.text not in subject_answers_map:
             return
+        bot.send_message(call.message.chat.id, "Предмет выбран", reply_markup=types.ReplyKeyboardRemove())
         subject = message.text.split(' ')[0]
 
         file_paths = try_search_files(subject)
@@ -50,11 +49,23 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
             with open(file.file_path, "rb") as files:
                 bot.send_document(call.message.chat.id, files, None,
                                   f"Описание: {file.description.get("description")}")
-        flag = False
         print("Sent files")
 
     if call.data == 'find_sum':
-        pass
+        keyboad_find = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        row = get_subject_buttons()
+        keyboad_find.add(*row)
+
+        bot.send_message(call.message.chat.id, "Выбирите предмет", reply_markup=keyboad_find)
+
+        message = get_last_message(call)
+        if message.text not in subject_answers_map:
+            return
+        types.ReplyKeyboardRemove()
+        subject = message.text.split(' ')[0]
+        subjects = len(try_search_files(subject))
+        bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)")
+        print("sent files count")
 
     if call.data == "add_file":
         if call.from_user.id in upload_limits and call.from_user.id not in unlimited_users_ids:
@@ -72,21 +83,24 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         message_description = get_last_message(call)
 
         keyword_find_notes = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        row = get_buttons()
+        row = get_subject_buttons()
 
-        if row:
-            keyword_find_notes.add(*row)
+        keyword_find_notes.add(*row)
 
         bot.send_message(call.message.chat.id, "Выбирите нужный вам предмет:",
                          reply_markup=keyword_find_notes)
 
         message = get_last_message(call)
-        if message.text not in subject_file_map:
+        if message.text not in subject_answers_map:
             return
+        types.ReplyKeyboardRemove()
         subject = message.text.split(' ')[0]
         with open(f"Files\\{id}-{subject}-{attachment.name}", 'wb') as f:
             f.write(attachment.data)
-        process_description(bot, message_description, attachment, id)
+
+        description = message.text
+        create_description(f"{id}-{attachment.name}", description)
+        bot.send_message(message.chat.id, "Описание добавленно")
 
         if call.from_user.id not in upload_limits:
             upload_limits[call.from_user.id] = 1
@@ -133,12 +147,6 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     return attachments
 
 
-def process_description(bot: telebot.TeleBot, message: types.Message, attachment: Attachment, id):
-    description = message.text
-    create_description(f"{id}-{attachment.name}", description)
-    bot.send_message(message.chat.id, "Описание добавленно")
-
-
 def get_last_message(call: types.CallbackQuery):
     old_message = last_messages.get(call.message.chat.id)
     new_message = last_messages.get(call.message.chat.id)
@@ -148,11 +156,12 @@ def get_last_message(call: types.CallbackQuery):
     return last_messages[call.message.chat.id]
 
 
-def get_buttons():
+def get_subject_buttons():
     row = []
-    for subject in subjects:
-        btn = types.KeyboardButton(subjects[subject])
+    for subject in subject_answers_map:
+        btn = types.KeyboardButton(subject)
         row.append(btn)
-        if len(row) == 6:
-            row = []
+        #if len(row) == 6:
+        #    row = []
     return row
+
