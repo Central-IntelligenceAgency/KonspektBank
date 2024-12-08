@@ -1,11 +1,11 @@
 import threading
 from menu import start_menu
 from qa_helper import qa_helper
-from cliking import callback_query, last_messages
-
+from cliking import callback_query, last_messages, unlimited_users_updater
+import config
 import telebot
 
-bot = telebot.TeleBot("7666906148:AAG2Q0TUL4RMuv8gQo8DbEuvshkswGm2MlE")
+bot = telebot.TeleBot(config.token)
 
 
 @bot.message_handler(commands=['start'])
@@ -20,7 +20,7 @@ def start_helper(message: telebot.types.Message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call: telebot.types.CallbackQuery):
-    threading.Thread(target=lambda:callback_query(call, bot)).start()
+    threading.Thread(target=lambda: callback_query(call, bot)).start()
 
 
 @bot.message_handler(content_types=["text", "photo", "document"])
@@ -30,4 +30,5 @@ def message_handler(message: telebot.types.Message):
 
 
 if __name__ == "__main__":
+    threading.Thread(target=unlimited_users_updater).start()
     bot.polling()
