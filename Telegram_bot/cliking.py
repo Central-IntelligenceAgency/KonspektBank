@@ -4,6 +4,7 @@ import uuid
 import config
 import telebot
 from telebot import types
+from InterfaceUtils import InterfaceUtils
 from time import sleep
 from _log import info
 from utils import try_search_files, create_description
@@ -12,12 +13,12 @@ from Attachments import Photo, Document, Attachment
 
 last_messages: dict[int, telebot.types.Message] = {}  # chatid:last_message
 
-if not os.path.exists('unlimited_users'):
+if not os.path.exists('unlimited_users.json'):
     unlimited_users_ids = []
-    with open('unlimited_users', 'w') as f:
+    with open('unlimited_users.json', 'w') as f:
         json.dump(unlimited_users_ids, f)
 else:
-    with open('unlimited_users', 'r') as f:
+    with open('unlimited_users.json', 'r') as f:
         unlimited_users_ids = json.load(f)
 
 upload_limits = {}
@@ -37,19 +38,11 @@ subject_answers_map = {
 
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
+    i_utils = InterfaceUtils(bot, call, subject_answers_map)
     if call.data == 'find_konspekt':
-        keyboad_find = types.ReplyKeyboardMarkup(is_persistent=True)
-
-        keyboad_find.add(*get_subject_buttons())
-
-        bot.send_message(call.message.chat.id, "Выбирите предмет", reply_markup=keyboad_find)
-
-        message = get_last_message(call)
-        if message.text not in subject_answers_map:
+        subject = i_utils.get_subject()
+        if not subject:
             return
-        bot.send_message(call.message.chat.id, "Предмет выбран", reply_markup=types.ReplyKeyboardRemove())
-        subject = message.text.split(' ')[0]
-
         file_paths = try_search_files(subject)
 
         if not file_paths:
@@ -63,16 +56,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         info(f"Sent files to {call.from_user.username}")
 
     if call.data == 'find_sum':
-        keyboad_find = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        row = get_subject_buttons()
-        keyboad_find.add(*row)
-
-        bot.send_message(call.message.chat.id, "Выберите предмет", reply_markup=keyboad_find)
-
-        message = get_last_message(call)
-        if message.text not in subject_answers_map:
-            return
-        subject = message.text.split(' ')[0]
+        subject = i_utils.get_subject()
         subjects = len(try_search_files(subject))
         bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)",
                          reply_markup=types.ReplyKeyboardRemove())
@@ -81,37 +65,24 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     if call.data == "add_file":
         if call.from_user.id in upload_limits and call.from_user.id not in unlimited_users_ids:
             if upload_limits[call.from_user.id] >= 3:
-                bot.send_message(call.message.chat.id, "Вы привысили лимит на день!:")
+                bot.send_message(call.message.chat.id, "Вы превысили лимит на день!")
                 return
         id = f"{uuid.uuid4()}".replace("-", "+")
-        bot.send_message(call.message.chat.id, "Отправте файл:")
+        bot.send_message(call.message.chat.id, "Отправьте файл:")
 
-        message = get_last_message(call)
+        message = i_utils.wait_for_new_message()
 
         attachment = HandleFile(bot, message)[0]
 
         bot.send_message(call.message.chat.id, "Отправьте описание:")
-        message_description = get_last_message(call)
+        message_description = i_utils.wait_for_new_message()
 
-        keyword_find_notes = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        row = get_subject_buttons()
-
-        keyword_find_notes.add(*row)
-
-        bot.send_message(call.message.chat.id, "Выбирите нужный вам предмет:",
-                         reply_markup=keyword_find_notes)
-
-        message = get_last_message(call)
-        if message.text not in subject_answers_map:
-            return
-
-        subject = message.text.split(' ')[0]
-        bot.send_message(call.message.chat.id, "Предмет выбран", reply_markup=types.ReplyKeyboardRemove())
+        subject = i_utils.get_subject()
 
         with open(f"Files/{id}-{subject}-{attachment.name}", 'wb') as f:
             f.write(attachment.data)
 
-        description = message.text
+        description = message_description.text
         create_description(f"{id}-{attachment.name}", description)
 
         if call.from_user.id not in upload_limits:
@@ -128,6 +99,8 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
 
 def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment] | None:
     def check_size(size) -> bool:
+        if not size:
+            return False
         if message.from_user.id in unlimited_users_ids:
             if size / 1024 / 1024 > 500:
                 bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
@@ -139,11 +112,11 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
         return True
 
     attachments = []
-
     if message.photo:
         photo = message.photo[-1]
         file = bot.get_file(photo.file_id)
-        if check_size(file.file_size):
+        if not check_size(file.file_size):
+            info("size limit reached")
             return
         downloaded_file = bot.download_file(file.file_path)
         attachments.append(Photo(downloaded_file, os.path.basename(file.file_path)))
@@ -151,7 +124,8 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     if message.document:
         document = message.document
         file = bot.get_file(document.file_id)
-        if check_size(file.file_size):
+        if not check_size(file.file_size):
+            info("size limit reached")
             return
         downloaded_file = bot.download_file(file.file_path)
         attachments.append(Document(downloaded_file, os.path.basename(file.file_path)))
@@ -159,31 +133,14 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     return attachments
 
 
-def get_last_message(call: types.CallbackQuery):
-    old_message = last_messages.get(call.message.chat.id)
-    new_message = last_messages.get(call.message.chat.id)
-    while old_message == new_message:
-        new_message = last_messages.get(call.message.chat.id)
-        sleep(1)
-    return last_messages[call.message.chat.id]
-
-
-def get_subject_buttons():
-    row = []
-    for subject in subject_answers_map:
-        btn = types.KeyboardButton(subject)
-        row.append(btn)
-    return row
-
-
 def unlimited_users_updater():
     global unlimited_users_ids
     while True:
         sleep(config.unlimited_users_updater_sleep_time)
-        if not os.path.exists('unlimited_users'):
+        if not os.path.exists('unlimited_users.json'):
             unlimited_users_ids = []
-            with open('unlimited_users', 'w') as f:
+            with open('unlimited_users.json', 'w') as f:
                 json.dump(unlimited_users_ids, f)
         else:
-            with open('unlimited_users', 'r') as f:
+            with open('unlimited_users.json', 'r') as f:
                 unlimited_users_ids = json.load(f)

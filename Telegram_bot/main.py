@@ -1,7 +1,9 @@
 import threading
 from menu import start_menu
 from qa_helper import qa_helper
-from cliking import callback_query, last_messages, unlimited_users_updater
+from cliking import callback_query, unlimited_users_updater
+from InterfaceUtils import last_messages
+from _log import info
 import config
 import telebot
 
@@ -26,7 +28,7 @@ def callback(call: telebot.types.CallbackQuery):
 @bot.message_handler(content_types=["text", "photo", "document"])
 def message_handler(message: telebot.types.Message):
     last_messages[message.chat.id] = message
-    print(f"received message: {message.text}")
+    info(f"received message: {message.text}")
 
 
 if __name__ == "__main__":
