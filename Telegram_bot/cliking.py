@@ -4,14 +4,14 @@ import uuid
 import config
 import telebot
 from telebot import types
-from InterfaceUtils import InterfaceUtils
+from InterfaceUtils import InterfaceUtils, waiters
 from time import sleep
 from _log import info
 from utils import try_search_files, create_description
+from menu import start_menu
 from text import *
 from Attachments import Photo, Document, Attachment
 
-last_messages: dict[int, telebot.types.Message] = {}  # chatid:last_message
 
 if not os.path.exists('unlimited_users.json'):
     unlimited_users_ids = []
@@ -40,7 +40,7 @@ subject_answers_map = {
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     i_utils = InterfaceUtils(bot, call, subject_answers_map)
     if call.data == 'find_konspekt':
-        subject = i_utils.get_subject()
+        subject = i_utils.get_subject_with_cancel_action()
         if not subject:
             return
         file_paths = try_search_files(subject)
@@ -56,7 +56,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         info(f"Sent files to {call.from_user.username}")
 
     if call.data == 'find_sum':
-        subject = i_utils.get_subject()
+        subject = i_utils.get_subject_with_cancel_action()
         subjects = len(try_search_files(subject))
         bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)",
                          reply_markup=types.ReplyKeyboardRemove())
@@ -68,21 +68,33 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
                 bot.send_message(call.message.chat.id, "Вы превысили лимит на день!")
                 return
         id = f"{uuid.uuid4()}".replace("-", "+")
-        bot.send_message(call.message.chat.id, "Отправьте файл:")
 
-        message = i_utils.wait_for_new_message()
+        message = i_utils.wait_for_new_message_with_cancel_action("Отправьте файл:")
 
-        attachment = HandleFile(bot, message)[0]
+        if not message:
+            return
 
-        bot.send_message(call.message.chat.id, "Отправьте описание:")
-        message_description = i_utils.wait_for_new_message()
+        attachments = HandleFile(bot, message)
+        if not attachments:
+            return
+        attachment = attachments[0]
 
-        subject = i_utils.get_subject()
+        message_description = i_utils.wait_for_new_message_with_cancel_action("Отправьте описание:")
+
+        if not message_description:
+            return
+
+        subject = i_utils.get_subject_with_cancel_action()
+
+        if not subject:
+            return
 
         with open(f"Files/{id}-{subject}-{attachment.name}", 'wb') as f:
             f.write(attachment.data)
 
         description = message_description.text
+        if not description:
+            return
         create_description(f"{id}-{attachment.name}", description)
 
         if call.from_user.id not in upload_limits:
@@ -93,8 +105,11 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         bot.send_message(call.message.chat.id, "Файл успешно отправлен!")
         info(
             f"Received file: {attachment.name}, description: {message_description.text}, from {call.from_user.username}")
-    if call.data == 'exit':
-        bot.delete_message(call.message.chat.id, call.message.message_id)
+    if "return" in call.data:
+        bot.delete_message(call.message.chat.id, call.message.id)
+        start_menu(bot, call.message.chat.id)
+        if call.data.split("+")[1] in waiters:
+            waiters[call.data.split("+")[1]] = True
 
 
 def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment] | None:

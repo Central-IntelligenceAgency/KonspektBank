@@ -12,7 +12,7 @@ bot = telebot.TeleBot(config.token)
 
 @bot.message_handler(commands=['start'])
 def start_bot(message: telebot.types.Message):
-    threading.Thread(target=start_menu(bot, message)).start()
+    threading.Thread(target=start_menu(bot, message.chat.id)).start()
 
 
 @bot.message_handler(commands=['help'])
