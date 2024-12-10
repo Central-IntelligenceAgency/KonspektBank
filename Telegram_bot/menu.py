@@ -14,6 +14,6 @@ def start_menu(bot: telebot.TeleBot, channel_id):
     keyboard_menu.add(btn_add_file)
 
     bot.send_message(channel_id, text="Приветствую тебя, мой ученик. Я — Страж Данных\n\n"
-                                           "Скажи мне, какой вопрос терзает твой разум?"
-                                           "Я здесь, чтобы предоставить ответы.",
-                     reply_markup=keyboard_menu)
+                                      "Скажи мне, какой вопрос терзает твой разум?"
+                                       "Я здесь, чтобы предоставить ответы.",
+                                       reply_markup=keyboard_menu)

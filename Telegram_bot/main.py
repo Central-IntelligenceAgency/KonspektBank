@@ -5,14 +5,41 @@ from cliking import callback_query, unlimited_users_updater
 from InterfaceUtils import last_messages
 from _log import info
 import config
+from setting import *
 import telebot
+from admin import *
 
 bot = telebot.TeleBot(config.token)
 
 
+def is_user_allowed(user_id):
+    return user_id in white_list
+
+
+def is_user_banned(user_id):
+    return ban_list.get(user_id, None)
+
+
 @bot.message_handler(commands=['start'])
 def start_bot(message: telebot.types.Message):
-    threading.Thread(target=start_menu(bot, message.chat.id)).start()
+    user_id = message.chat.id
+
+    if is_user_allowed(user_id):
+        user_name = white_list[user_id]
+        bot.send_message(message.chat.id, f"Здравствуйте, {user_name}!")
+        threading.Thread(target=start_menu, args=(bot, message.chat.id)).start()
+
+    elif is_user_banned(user_id):
+        reason_ban = ban_list[user_id]
+        bot.send_message(message.chat.id, f"Внимание!\n\n На вашем аккаунте обнаружен бан.\n\n Причина:\n"
+                                          f"{reason_ban}")
+        return
+
+    elif is_user_admin(user_id):
+        admin_menu(bot, message, user_id)
+
+    else:
+        bot.send_message(message.chat.id, "Вы не можете использовать этого бота.")
 
 
 @bot.message_handler(commands=['help'])

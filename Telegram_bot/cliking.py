@@ -11,6 +11,7 @@ from utils import try_search_files, create_description
 from menu import start_menu
 from text import *
 from Attachments import Photo, Document, Attachment
+from admin import *
 
 
 if not os.path.exists('unlimited_users.json'):
@@ -110,6 +111,33 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         start_menu(bot, call.message.chat.id)
         if call.data.split("+")[1] in waiters:
             waiters[call.data.split("+")[1]] = True
+
+    if call.data == "admin":
+        admin_control(bot, call.message)
+
+    if call.data == "bans":
+        menu_bans(bot, call.message)
+
+    if call.data == "back":
+        back_admin_menu(bot, call.message, call.message.chat.id)
+
+    if call.data == "add_admin":
+        list_users(bot, call.message)
+
+    if call.data == "remove_admin":
+        list_admin(bot, call.message)
+
+    if call.data == "back_admin_control":
+        admin_control(bot, call.message)
+
+    if call.data == "ban":
+        list_users(bot, call.message)
+
+    if call.data == "remove_ban":
+        list_user_ban(bot, call.message)
+
+    if call.data == "exit":
+        bot.delete_message(call.message.chat.id, call.message.id)
 
 
 def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment] | None:

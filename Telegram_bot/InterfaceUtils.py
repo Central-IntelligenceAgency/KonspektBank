@@ -8,6 +8,7 @@ from telebot import types
 last_messages: dict[int, telebot.types.Message] = {}
 waiters = {}
 
+
 class InterfaceUtils():  # чтобы не передавать 100000 аргументов
     def __init__(self, bot: telebot.TeleBot, call: types.CallbackQuery, subjects: dict):
         self.bot = bot
@@ -43,7 +44,6 @@ class InterfaceUtils():  # чтобы не передавать 100000 аргу�
             sleep(0.5)
         del waiters[id]
         return last_messages[self.call.message.chat.id]
-
 
     def wait_for_new_message(self):
         old_message = last_messages.get(self.call.message.chat.id)
