@@ -139,6 +139,30 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     if call.data == "exit":
         bot.delete_message(call.message.chat.id, call.message.id)
 
+    if call.data.startswith("add_admin_"):
+        user_id = int(call.data.split("_")[2])
+        user_name = white_list.get(user_id)
+
+        if user_name:
+            if user_id in admin:
+                bot.answer_callback_query(call.id, text=f"{user_name} уже является администратором!")
+            else:
+                admin[user_id] = user_name
+                bot.answer_callback_query(call.id, text=f"{user_name} добавлен в список администраторов!")
+
+            list_admin(bot, call.message)
+        return
+
+    if call.data.startswith("remove_admin_"):
+        user_id = int(call.data.split("_")[2])
+        user_name = white_list.get(user_id)
+
+        if user_name:
+            del admin[user_id]
+            bot.answer_callback_query(call.id, text=f"{user_name} удалён из списка администраторов!")
+            list_admin(bot, call.message)
+        return
+
 
 def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment] | None:
     def check_size(size) -> bool:

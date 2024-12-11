@@ -26,6 +26,9 @@ def admin_menu(bot: telebot.TeleBot, message: types.Message, user_id):
                                           f"Да будет с вами сила свитков!",
                          reply_markup=keyboard)
 
+    else:
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему ")
+
 
 def menu_bans(bot: telebot.TeleBot, message: types.Message):
     keyboard_bans = types.InlineKeyboardMarkup()
@@ -92,19 +95,22 @@ def list_users(bot: telebot.TeleBot, message: types.Message):
     kb_list_users = types.InlineKeyboardMarkup(row_width=3)
 
     row = []
-    for i, (user_id, user_name) in enumerate(white_list.items()):
-        btn_user = types.InlineKeyboardButton(text=user_name, callback_data=str(user_id))
+    for user_id, user_name in white_list.items():
+        btn_user = types.InlineKeyboardButton(text=user_name, callback_data=f"add_admin_{user_id}")
         row.append(btn_user)
 
-        if (i + 1) % 3 == 0 or i == len(white_list) - 1:
+        if len(row) == 3:
             kb_list_users.add(*row)
             row = []
+
+    if row:
+        kb_list_users.add(*row)
 
     btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back_admin_control")
     kb_list_users.add(btn_back)
 
     bot.edit_message_text(
-        "Ваша воля, стала бы благословением для нового поддоного! Скажите имя, которому позволено обрести"
+        "Ваша воля, стала бы благословением для нового поддоного! Скажите имя, которому позволено обрести "
         "власть над сокровищами знаний.",
         chat_id=message.chat.id,
         message_id=message.message_id,
@@ -116,11 +122,17 @@ def list_admin(bot: telebot.TeleBot, message: types.Message):
     kb_list_admins = types.InlineKeyboardMarkup()
 
     row = []
-    for i, (user_id, user_name) in enumerate(admin.items()):
-        btn_admin = types.InlineKeyboardButton(text=user_name, callback_data=str(user_id))
+    for user_id, user_name in admin.items():
+        btn_admin = types.InlineKeyboardButton(text=user_name, callback_data=f"remove_admin_{user_id}")
         row.append(btn_admin)
+
+        if len(row) == 3:
+            kb_list_admins.add(*row)
+            row = []
+
+    if row:
         kb_list_admins.add(*row)
-        row = []
+
     btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back_admin_control")
     kb_list_admins.add(btn_back)
 

@@ -35,9 +35,6 @@ def start_bot(message: telebot.types.Message):
                                           f"{reason_ban}")
         return
 
-    elif is_user_admin(user_id):
-        admin_menu(bot, message, user_id)
-
     else:
         bot.send_message(message.chat.id, "Вы не можете использовать этого бота.")
 
@@ -45,6 +42,11 @@ def start_bot(message: telebot.types.Message):
 @bot.message_handler(commands=['help'])
 def start_helper(message: telebot.types.Message):
     qa_helper(bot, message)
+
+
+@bot.message_handler(commands=['admin'])
+def start_helper(message: telebot.types.Message):
+    admin_menu(bot, message, message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: True)
