@@ -59,5 +59,5 @@ def message_handler(message: telebot.types.Message):
 
 
 if __name__ == "__main__":
-    #threading.Thread(target=unlimited_users_updater).start()
+    threading.Thread(target=updater).start()
     bot.polling()

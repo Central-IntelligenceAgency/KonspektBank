@@ -1,15 +1,18 @@
+import os.path
+import json
 import telebot
 from telebot import types
 from config import *
+import time
 
 
 def is_user_admin(user_id):
-    return user_id in admin
+    return user_id in admins
 
 
 def admin_menu(bot: telebot.TeleBot, message: types.Message, user_id):
     if is_user_admin(user_id):
-        user_name = admin[user_id]
+        user_name = admins[user_id]
 
         keyboard = types.InlineKeyboardMarkup()
 
@@ -70,7 +73,7 @@ def admin_control(bot: telebot.TeleBot, message: types.Message):
 
 
 def back_admin_menu(bot: telebot.TeleBot, message: types.Message, user_id):
-    user_name = admin[user_id]
+    user_name = admins[user_id]
 
     kb_back_admin_menu = types.InlineKeyboardMarkup()
 
@@ -122,7 +125,7 @@ def list_admin(bot: telebot.TeleBot, message: types.Message):
     kb_list_admins = types.InlineKeyboardMarkup()
 
     row = []
-    for user_id, user_name in admin.items():
+    for user_id, user_name in admins.items():
         btn_admin = types.InlineKeyboardButton(text=user_name, callback_data=f"remove_admin_{user_id}")
         row.append(btn_admin)
 
@@ -163,5 +166,30 @@ def list_user_ban(bot: telebot.TeleBot, message: types.Message):
         reply_markup=kb_list_user_bans
     )
 
+def updater():
+    global admins
+    global white_list
+    global ban_list
+    while True:
+        if os.path.exists(white_list_path):
+            with open(white_list_path, 'w') as f:
+                f.write(json.dumps(white_list))
 
+        if os.path.exists(ban_list_path):
+            with open(ban_list_path, 'w') as f:
+                f.write(json.dumps(ban_list))
+
+        if os.path.exists(admins_list_path):
+            with open(admins_list_path, 'w') as f:
+                f.write(json.dumps(admins))
+
+        with open(admins_list_path, 'r') as f:
+            admins = json.load(f)
+        with open(white_list_path, 'r') as f:
+            white_list = json.load(f)
+        with open(ban_list_path, 'r') as f:
+            ban_list = json.load(f)
+
+
+        time.sleep(60)
 

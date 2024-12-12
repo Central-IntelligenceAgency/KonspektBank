@@ -32,7 +32,11 @@ ban_list = {
     1793575187: "3.14 ЕФФ - Проявление неадекватности по отношению к своему классу, признан виновным советом прогеймов",
 }
 
-admin = {
+admins = {
     5160469867: "Кузьмин Марк",
     5155248466: "Дынник Руслан",
 }
+
+white_list_path = "white_list.json"
+ban_list_path = "ban_list.json"
+admins_list_path = "admins_list.json"

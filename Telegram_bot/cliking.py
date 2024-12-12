@@ -14,7 +14,7 @@ subject_answers_map = {
     "Биология 🔬": biology_replies,
     "Химия 🧪": chemistry_replies,
     "Физика ⚛️": physics_replies,
-    "Математика ➕": math_replies,
+    "Математика ✏": math_replies,
     "История 📜": history_replies,
     "Иностранный язык 🌍": foreign_language_replies,
     "Обществознание 👥": social_studies_replies,
@@ -130,10 +130,10 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         user_name = white_list.get(user_id)
 
         if user_name:
-            if user_id in admin:
+            if user_id in admins:
                 bot.answer_callback_query(call.id, text=f"{user_name} уже является администратором!")
             else:
-                admin[user_id] = user_name
+                admins[user_id] = user_name
                 bot.answer_callback_query(call.id, text=f"{user_name} добавлен в список администраторов!")
 
             list_admin(bot, call.message)
@@ -144,7 +144,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         user_name = white_list.get(user_id)
 
         if user_name:
-            del admin[user_id]
+            del admins[user_id]
             bot.answer_callback_query(call.id, text=f"{user_name} удалён из списка администраторов!")
             list_admin(bot, call.message)
         return
