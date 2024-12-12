@@ -9,31 +9,66 @@ import time
 def is_user_admin(user_id):
     return user_id in admins
 
+def admin_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
 
-def admin_menu(bot: telebot.TeleBot, message: types.Message, user_id):
-    if is_user_admin(user_id):
-        user_name = admins[user_id]
+    btn_add_admin = types.InlineKeyboardButton(text="Список админов", callback_data="admin")
+    btn_remove_ban = types.InlineKeyboardButton(text="Баны", callback_data="bans")
+    btn_exit = types.InlineKeyboardButton(text="Выйти", callback_data="exit")
 
-        keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(btn_add_admin)
+    keyboard.add(btn_remove_ban)
+    keyboard.add(btn_exit)
 
-        btn_add_admin = types.InlineKeyboardButton(text="Список админов", callback_data="admin")
-        btn_remove_ban = types.InlineKeyboardButton(text="Баны", callback_data="bans")
-        btn_exit = types.InlineKeyboardButton(text="Выйти", callback_data="exit")
+    return keyboard
 
-        keyboard.add(btn_add_admin)
-        keyboard.add(btn_remove_ban)
-        keyboard.add(btn_exit)
+def users_list(user_button_callback, return_button_callback, list):
+    users_keyboard = types.InlineKeyboardMarkup(row_width=3)
 
+    row = []
+    for user_id, user_name in list.items():
+        btn_user = types.InlineKeyboardButton(text=user_name, callback_data=f"{user_button_callback}_{user_id}")
+        row.append(btn_user)
+
+        if len(row) == 3:
+            users_keyboard.add(*row)
+            row = []
+
+    if row:
+        users_keyboard.add(*row)
+
+    btn_back = types.InlineKeyboardButton(text="Назад", callback_data=f"{return_button_callback}")
+    users_keyboard.add(btn_back)
+    return users_keyboard
+
+def admin_menu(bot: telebot.TeleBot, message: types.Message, user_id, edit=False):
+    if not is_user_admin(user_id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
+
+    user_name = admins[user_id]
+
+    keyboard = admin_keyboard()
+    if not edit:
         bot.send_message(message.chat.id, f"Добро пожаловать, {user_name}!\n\nВы вновь вошли"
                                           f" в святилище знаний, и ваши полномочия как Администратора подтверждены.\n\n"
                                           f"Да будет с вами сила свитков!",
                          reply_markup=keyboard)
-
     else:
-        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему ")
+        bot.edit_message_text(f"Добро пожаловать, {user_name}!\n\nВы вновь вошли"
+                              f" в святилище знаний, и ваши полномочия как Администратора подтверждены.\n\n"
+                              f"Да будет с вами сила свитков!",
+                              chat_id=message.chat.id,
+                              message_id=message.message_id,
+                              reply_markup=keyboard
+                              )
 
 
 def menu_bans(bot: telebot.TeleBot, message: types.Message):
+    if not is_user_admin(message.chat.id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
+
     keyboard_bans = types.InlineKeyboardMarkup()
 
     btn_add_ban = types.InlineKeyboardButton(text="Выдать бан", callback_data="ban")
@@ -53,6 +88,10 @@ def menu_bans(bot: telebot.TeleBot, message: types.Message):
 
 
 def admin_control(bot: telebot.TeleBot, message: types.Message):
+    if not is_user_admin(message.chat.id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
+
     keyboard_admin_control = types.InlineKeyboardMarkup()
 
     btn_add_admin = types.InlineKeyboardButton(text="Выдать админку", callback_data="add_admin")
@@ -72,45 +111,12 @@ def admin_control(bot: telebot.TeleBot, message: types.Message):
     )
 
 
-def back_admin_menu(bot: telebot.TeleBot, message: types.Message, user_id):
-    user_name = admins[user_id]
+def list_users(bot: telebot.TeleBot, message: types.Message, callback, return_callback):
+    if not is_user_admin(message.chat.id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
 
-    kb_back_admin_menu = types.InlineKeyboardMarkup()
-
-    btn_add_admin = types.InlineKeyboardButton(text="Список админов", callback_data="admin")
-    btn_remove_ban = types.InlineKeyboardButton(text="Баны", callback_data="bans")
-    btn_exit = types.InlineKeyboardButton(text="Выйти", callback_data="exit")
-
-    kb_back_admin_menu.add(btn_add_admin)
-    kb_back_admin_menu.add(btn_remove_ban)
-    kb_back_admin_menu.add(btn_exit)
-
-    bot.edit_message_text(f"Добро пожаловать, {user_name}!\n\nВы вновь вошли"
-                                          f" в святилище знаний, и ваши полномочия как Администратора подтверждены.\n\n"
-                                          f"Да будет с вами сила свитков!",
-                          chat_id=message.chat.id,
-                          message_id=message.message_id,
-                          reply_markup=kb_back_admin_menu
-                          )
-
-
-def list_users(bot: telebot.TeleBot, message: types.Message):
-    kb_list_users = types.InlineKeyboardMarkup(row_width=3)
-
-    row = []
-    for user_id, user_name in white_list.items():
-        btn_user = types.InlineKeyboardButton(text=user_name, callback_data=f"add_admin_{user_id}")
-        row.append(btn_user)
-
-        if len(row) == 3:
-            kb_list_users.add(*row)
-            row = []
-
-    if row:
-        kb_list_users.add(*row)
-
-    btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back_admin_control")
-    kb_list_users.add(btn_back)
+    kb_list_users = users_list(callback, return_callback, white_list)
 
     bot.edit_message_text(
         "Ваша воля, стала бы благословением для нового поддоного! Скажите имя, которому позволено обрести "
@@ -122,22 +128,11 @@ def list_users(bot: telebot.TeleBot, message: types.Message):
 
 
 def list_admin(bot: telebot.TeleBot, message: types.Message):
-    kb_list_admins = types.InlineKeyboardMarkup()
+    if not is_user_admin(message.chat.id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
 
-    row = []
-    for user_id, user_name in admins.items():
-        btn_admin = types.InlineKeyboardButton(text=user_name, callback_data=f"remove_admin_{user_id}")
-        row.append(btn_admin)
-
-        if len(row) == 3:
-            kb_list_admins.add(*row)
-            row = []
-
-    if row:
-        kb_list_admins.add(*row)
-
-    btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back_admin_control")
-    kb_list_admins.add(btn_back)
+    kb_list_admins = users_list("remove_admin", "back_admin_control", admins)
 
     bot.edit_message_text(
         "Выбитите Админы",
@@ -148,16 +143,11 @@ def list_admin(bot: telebot.TeleBot, message: types.Message):
 
 
 def list_user_ban(bot: telebot.TeleBot, message: types.Message):
-    kb_list_user_bans = types.InlineKeyboardMarkup()
+    if not is_user_admin(message.chat.id):
+        bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
+        return
 
-    row = []
-    for i, (user_id, user_name) in enumerate(ban_list.items()):
-        btn_user = types.InlineKeyboardButton(text=user_name, callback_data=str(user_id))
-        row.append(btn_user)
-        kb_list_user_bans.add(*row)
-        row = []
-    btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back_admin_control")
-    kb_list_user_bans.add(btn_back)
+    kb_list_user_bans = users_list("back_admin_control", "back_from_bans", ban_list)
 
     bot.edit_message_text(
         "Cписок пользователей в бане",
@@ -166,30 +156,39 @@ def list_user_ban(bot: telebot.TeleBot, message: types.Message):
         reply_markup=kb_list_user_bans
     )
 
+
 def updater():
     global admins
     global white_list
     global ban_list
+    def rewrite_keys_to_int(dict):
+        keys = list(dict.keys())
+        for key in keys:
+            value = dict[key]
+            dict.pop(key)
+            dict[int(key)] = value
+        return dict
+
     while True:
-        if os.path.exists(white_list_path):
-            with open(white_list_path, 'w') as f:
-                f.write(json.dumps(white_list))
+        if not os.path.exists(white_list_path):
+            with open(white_list_path, 'w', encoding="utf-8") as f:
+                f.write(json.dumps(white_list, indent=4, sort_keys=True))
 
-        if os.path.exists(ban_list_path):
-            with open(ban_list_path, 'w') as f:
-                f.write(json.dumps(ban_list))
+        if not os.path.exists(ban_list_path):
+            with open(ban_list_path, 'w', encoding="utf-8") as f:
+                f.write(json.dumps(ban_list, indent=4, sort_keys=True))
 
-        if os.path.exists(admins_list_path):
-            with open(admins_list_path, 'w') as f:
-                f.write(json.dumps(admins))
+        if not os.path.exists(admins_list_path):
+            with open(admins_list_path, 'w', encoding="utf-8") as f:
+                f.write(json.dumps(admins, indent=4, sort_keys=True))
 
-        with open(admins_list_path, 'r') as f:
-            admins = json.load(f)
-        with open(white_list_path, 'r') as f:
-            white_list = json.load(f)
-        with open(ban_list_path, 'r') as f:
-            ban_list = json.load(f)
+        with open(admins_list_path, 'r', encoding="utf-8") as f:
+            admins = rewrite_keys_to_int(json.load(f))
 
+        with open(white_list_path, 'r', encoding="utf-8") as f:
+            white_list = rewrite_keys_to_int(json.load(f))
+
+        with open(ban_list_path, 'r', encoding="utf-8") as f:
+            ban_list = rewrite_keys_to_int(json.load(f))
 
         time.sleep(60)
-

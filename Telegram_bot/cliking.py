@@ -105,10 +105,10 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         menu_bans(bot, call.message)
 
     if call.data == "back":
-        back_admin_menu(bot, call.message, call.message.chat.id)
+        admin_menu(bot, call.message, call.message.chat.id, edit=True)
 
     if call.data == "add_admin":
-        list_users(bot, call.message)
+        list_users(bot, call.message, "add_admin", "back_admin_control")
 
     if call.data == "remove_admin":
         list_admin(bot, call.message)
@@ -116,8 +116,11 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     if call.data == "back_admin_control":
         admin_control(bot, call.message)
 
+    if call.data == "back_from_bans":
+        menu_bans(bot, call.message)
+
     if call.data == "ban":
-        list_users(bot, call.message)
+        list_users(bot, call.message, "ban1", "back_from_bans")
 
     if call.data == "remove_ban":
         list_user_ban(bot, call.message)

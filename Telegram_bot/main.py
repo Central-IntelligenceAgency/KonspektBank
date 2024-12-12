@@ -44,6 +44,7 @@ def start_helper(message: telebot.types.Message):
 
 @bot.message_handler(commands=['admin'])
 def start_helper(message: telebot.types.Message):
+    print(message.chat.id)
     admin_menu(bot, message, message.chat.id)
 
 
