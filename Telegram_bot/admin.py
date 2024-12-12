@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from setting import admin, white_list, ban_list
+from config import *
 
 
 def is_user_admin(user_id):

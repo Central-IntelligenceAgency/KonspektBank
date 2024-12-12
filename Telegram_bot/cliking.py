@@ -13,15 +13,6 @@ from text import *
 from Attachments import Photo, Document, Attachment
 from admin import *
 
-
-if not os.path.exists('unlimited_users.json'):
-    unlimited_users_ids = []
-    with open('unlimited_users.json', 'w') as f:
-        json.dump(unlimited_users_ids, f)
-else:
-    with open('unlimited_users.json', 'r') as f:
-        unlimited_users_ids = json.load(f)
-
 upload_limits = {}
 
 subject_answers_map = {
@@ -64,7 +55,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         info(f"Sent files count to {call.from_user.username}")
 
     if call.data == "add_file":
-        if call.from_user.id in upload_limits and call.from_user.id not in unlimited_users_ids:
+        if call.from_user.id in upload_limits and not is_user_admin(call.message.chat.id):
             if upload_limits[call.from_user.id] >= 3:
                 bot.send_message(call.message.chat.id, "Вы превысили лимит на день!")
                 return
@@ -168,7 +159,7 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     def check_size(size) -> bool:
         if not size:
             return False
-        if message.from_user.id in unlimited_users_ids:
+        if is_user_admin(message.chat.id):
             if size / 1024 / 1024 > 500:
                 bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
                 return False
@@ -198,16 +189,3 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
         attachments.append(Document(downloaded_file, os.path.basename(file.file_path)))
 
     return attachments
-
-
-def unlimited_users_updater():
-    global unlimited_users_ids
-    while True:
-        sleep(config.unlimited_users_updater_sleep_time)
-        if not os.path.exists('unlimited_users.json'):
-            unlimited_users_ids = []
-            with open('unlimited_users.json', 'w') as f:
-                json.dump(unlimited_users_ids, f)
-        else:
-            with open('unlimited_users.json', 'r') as f:
-                unlimited_users_ids = json.load(f)

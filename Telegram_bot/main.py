@@ -1,15 +1,14 @@
 import threading
 from menu import start_menu
 from qa_helper import qa_helper
-from cliking import callback_query, unlimited_users_updater
+from cliking import callback_query
 from InterfaceUtils import last_messages
 from _log import info
-import config
-from setting import *
+from config import *
 import telebot
 from admin import *
 
-bot = telebot.TeleBot(config.token)
+bot = telebot.TeleBot(token)
 
 
 def is_user_allowed(user_id):
@@ -61,5 +60,5 @@ def message_handler(message: telebot.types.Message):
 
 
 if __name__ == "__main__":
-    threading.Thread(target=unlimited_users_updater).start()
+    #threading.Thread(target=unlimited_users_updater).start()
     bot.polling()
