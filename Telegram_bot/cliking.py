@@ -1,11 +1,6 @@
-import json
 import os
 import uuid
-import config
-import telebot
-from telebot import types
 from InterfaceUtils import InterfaceUtils, waiters
-from time import sleep
 from _log import info
 from utils import try_search_files, create_description
 from menu import start_menu

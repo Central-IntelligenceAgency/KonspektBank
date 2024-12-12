@@ -4,9 +4,8 @@ from qa_helper import qa_helper
 from cliking import callback_query
 from InterfaceUtils import last_messages
 from _log import info
-from config import *
-import telebot
 from admin import *
+
 
 bot = telebot.TeleBot(token)
 
