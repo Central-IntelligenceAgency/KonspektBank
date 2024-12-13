@@ -9,6 +9,7 @@ from text import *
 from Attachments import Photo, Document, Attachment
 import admin
 import telebot
+import time
 import config
 import math
 
@@ -27,8 +28,10 @@ subject_answers_map = {
     "Психология 🧠": psychology_replies,
 }
 
-page_db = {} #id:page
-return_keyboard = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text=config.cancel_naming, callback_data=f"back_to_menu")]])
+page_db = {}  #id:page
+return_keyboard = types.InlineKeyboardMarkup(
+    [[types.InlineKeyboardButton(text=config.cancel_naming, callback_data=f"back_to_menu")]])
+
 
 def find_konspekt(i_utils, call, bot, subject=None):
     if not subject:
@@ -38,33 +41,37 @@ def find_konspekt(i_utils, call, bot, subject=None):
     file_paths = try_search_files(subject)
     max_pages = int(math.ceil(len(file_paths) / config.page_step))
     current_page_files = file_paths[page_db[call.message.chat.id]:page_db[call.message.chat.id] + config.page_step]
-    current_page = int(math.ceil((page_db[call.message.chat.id]+config.page_step) / config.page_step))
-    print(current_page)
+    current_page = int(math.ceil((page_db[call.message.chat.id] + config.page_step) / config.page_step))
+
     if not current_page_files:
         bot.send_message(call.message.chat.id, "Файлов нету 😭😭", reply_markup=return_keyboard)
         return
+
     bot.send_message(call.message.chat.id, f"Вот файлы по {subject}:")
+
     for i, file in enumerate(current_page_files):
         with open(file.file_path, "rb") as files:
             bot.send_document(call.message.chat.id, files, None,
-                              f"Файл {i+1}; Описание: {file.description.get("description")}")
-    keyboard = types.InlineKeyboardMarkup([[
-                         types.InlineKeyboardButton(text=f"✏ Задать свою страницу",
-                                                    callback_data=f"set_page+{call.message.chat.id}+{subject}"),
-                         types.InlineKeyboardButton(text=f"↩ Вернуться к меню",
-                                                    callback_data=f"back_to_menu")
+                              f"Файл {i + 1}; Описание: {file.description.get("description")}")
 
-                     ]], row_width=8)
+    keyboard = types.InlineKeyboardMarkup([[
+        types.InlineKeyboardButton(text=f"✏ Задать свою страницу",
+                                   callback_data=f"set_page+{call.message.chat.id}+{subject}"),
+        types.InlineKeyboardButton(text=f"↩ Вернуться к меню",
+                                   callback_data=f"back_to_menu")
+
+    ]], row_width=8)
+
     if max_pages > 1 and current_page < max_pages:
         keyboard.add(types.InlineKeyboardButton(text=f"▶ Следующая",
-                                                    callback_data=f"next_page+{call.message.chat.id}+{subject}"),)
+                                                callback_data=f"next_page+{call.message.chat.id}+{subject}"), )
     bot.send_message(call.message.chat.id, f"\nСтраница {current_page}/{max_pages}",
                      reply_markup=keyboard)
 
     info(f"Sent files to {call.from_user.username}")
 
-def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
 
+def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     i_utils = InterfaceUtils(bot, call, subject_answers_map)
     if call.data == 'find_konspekt':
         page_db[call.message.chat.id] = 0
@@ -78,8 +85,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         subject = call.data.split("+")[2]
 
         file_paths = try_search_files(subject)
-        max_pages = int(math.ceil(len(file_paths)+config.page_step / config.page_step))
-        print(max_pages)
+        max_pages = int(math.ceil(len(file_paths) + config.page_step / config.page_step))
 
         bot.delete_message(call.message.chat.id, call.message.id)
         id = int(call.data.split("+")[1])
@@ -94,22 +100,20 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         except:
             return
         current_page = int(math.ceil((page_db[call.message.chat.id]) / config.page_step))
-        print(current_page)
         if current_page > max_pages:
             page_db[id] = 0
 
-        find_konspekt(i_utils, call, bot, subject) # send files
+        find_konspekt(i_utils, call, bot, subject)  # send files
 
     if "next_page" in call.data:
         bot.delete_message(call.message.chat.id, call.message.id)
         id = int(call.data.split("+")[1])
         if id in page_db:
-            page_db[id] += config.page_step # + 1 page
-        find_konspekt(i_utils, call, bot, call.data.split("+")[2]) # send files
+            page_db[id] += config.page_step  # + 1 page
+        find_konspekt(i_utils, call, bot, call.data.split("+")[2])  # send files
 
     if call.data == 'find_sum':
         subject = i_utils.get_subject_with_cancel_action()
-
         subjects = len(try_search_files(subject))
         bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)",
                          reply_markup=types.ReplyKeyboardRemove())
@@ -253,3 +257,11 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
         attachments.append(Document(downloaded_file, os.path.basename(file.file_path)))
 
     return attachments
+
+
+def upload_limits_updater():
+    global upload_limits
+
+    while True:
+        upload_limits = {}
+        time.sleep(86400)  #24 hours

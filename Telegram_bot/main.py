@@ -1,7 +1,7 @@
 import threading
 from menu import start_menu
 from qa_helper import qa_helper
-from cliking import callback_query
+from cliking import callback_query, upload_limits_updater
 from InterfaceUtils import last_messages
 from _log import info
 import admin
@@ -63,4 +63,5 @@ def message_handler(message: telebot.types.Message):
 
 if __name__ == "__main__":
     threading.Thread(target=admin.updater).start()
+    threading.Thread(target=upload_limits_updater).start()
     bot.polling()
