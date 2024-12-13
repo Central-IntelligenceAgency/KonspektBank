@@ -4,9 +4,12 @@ from InterfaceUtils import InterfaceUtils, waiters
 from _log import info
 from utils import try_search_files, create_description
 from menu import start_menu
+from telebot import types
 from text import *
 from Attachments import Photo, Document, Attachment
-from admin import *
+import admin
+import telebot
+import config
 import math
 
 upload_limits = {}
@@ -32,9 +35,9 @@ def find_konspekt(i_utils, call, bot, subject=None):
         if not subject:
             return
     file_paths = try_search_files(subject)
-    max_pages = int(math.ceil(len(file_paths) / page_step))
-    current_page_files = file_paths[page_db[call.message.chat.id]:page_db[call.message.chat.id] + page_step]
-    current_page = int(math.ceil((page_db[call.message.chat.id]+page_step) / page_step))
+    max_pages = int(math.ceil(len(file_paths) / config.page_step))
+    current_page_files = file_paths[page_db[call.message.chat.id]:page_db[call.message.chat.id] + config.page_step]
+    current_page = int(math.ceil((page_db[call.message.chat.id]+config.page_step) / config.page_step))
 
     if not current_page_files:
         bot.send_message(call.message.chat.id, "Файлов нету 😭😭")
@@ -54,6 +57,7 @@ def find_konspekt(i_utils, call, bot, subject=None):
     info(f"Sent files to {call.from_user.username}")
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
+
     i_utils = InterfaceUtils(bot, call, subject_answers_map)
     if call.data == 'find_konspekt':
         page_db[call.message.chat.id] = 0
@@ -63,7 +67,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         bot.delete_message(call.message.chat.id, call.message.id)
         id = int(call.data.split("+")[1])
         if id in page_db:
-            page_db[id] += page_step # + 1 page
+            page_db[id] += config.page_step # + 1 page
         find_konspekt(i_utils, call, bot, call.data.split("+")[2]) # send files
 
     if call.data == 'find_sum':
@@ -75,7 +79,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
         info(f"Sent files count to {call.from_user.username}")
 
     if call.data == "add_file":
-        if call.from_user.id in upload_limits and not is_user_admin(call.message.chat.id):
+        if call.from_user.id in upload_limits and not admin.is_user_admin(call.message.chat.id):
             if upload_limits[call.from_user.id] >= 3:
                 bot.send_message(call.message.chat.id, "Вы превысили лимит на день!")
                 return
@@ -124,57 +128,57 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
             waiters[call.data.split("+")[1]] = True
 
     if call.data == "admin":
-        admin_control(bot, call.message)
+        admin.admin_control(bot, call.message)
 
     if call.data == "bans":
-        menu_bans(bot, call.message)
+        admin.menu_bans(bot, call.message)
 
     if call.data == "back":
-        admin_menu(bot, call.message, call.message.chat.id, edit=True)
+        admin.admin_menu(bot, call.message, call.message.chat.id, edit=True)
 
     if call.data == "add_admin":
-        list_users(bot, call.message, "add_admin", "back_admin_control")
+        admin.list_users(bot, call.message, "add_admin", "back_admin_control")
 
     if call.data == "remove_admin":
-        list_admin(bot, call.message)
+        admin.list_admin(bot, call.message, "remove_admin")
 
     if call.data == "back_admin_control":
-        admin_control(bot, call.message)
+        admin.admin_control(bot, call.message)
 
     if call.data == "back_from_bans":
-        menu_bans(bot, call.message)
+        admin.menu_bans(bot, call.message)
 
     if call.data == "ban":
-        list_users(bot, call.message, "ban1", "back_from_bans")
+        admin.list_users(bot, call.message, "ban1", "back_from_bans")
 
     if call.data == "remove_ban":
-        list_user_ban(bot, call.message)
+        admin.list_user_ban(bot, call.message)
 
     if call.data == "exit":
         bot.delete_message(call.message.chat.id, call.message.id)
 
     if call.data.startswith("add_admin_"):
         user_id = int(call.data.split("_")[2])
-        user_name = white_list.get(user_id)
+        user_name = config.white_list.get(user_id)
 
         if user_name:
-            if user_id in admins:
+            if user_id in config.admins:
                 bot.answer_callback_query(call.id, text=f"{user_name} уже является администратором!")
             else:
-                admins[user_id] = user_name
+                config.admins[user_id] = user_name
                 bot.answer_callback_query(call.id, text=f"{user_name} добавлен в список администраторов!")
 
-            list_admin(bot, call.message)
+            admin.list_admin(bot, call.message)
         return
 
     if call.data.startswith("remove_admin_"):
         user_id = int(call.data.split("_")[2])
-        user_name = white_list.get(user_id)
+        user_name = config.white_list.get(user_id)
 
         if user_name:
-            del admins[user_id]
+            del config.admins[user_id]
             bot.answer_callback_query(call.id, text=f"{user_name} удалён из списка администраторов!")
-            list_admin(bot, call.message)
+            admin.list_admin(bot, call.message)
         return
 
 
@@ -182,7 +186,7 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
     def check_size(size) -> bool:
         if not size:
             return False
-        if is_user_admin(message.chat.id):
+        if admin.is_user_admin(message.chat.id):
             if size / 1024 / 1024 > 500:
                 bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
                 return False

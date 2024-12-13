@@ -2,7 +2,7 @@ import os.path
 import json
 import telebot
 from telebot import types
-from config import *
+import config
 import time
 
 
@@ -127,12 +127,12 @@ def list_users(bot: telebot.TeleBot, message: types.Message, callback, return_ca
     )
 
 
-def list_admin(bot: telebot.TeleBot, message: types.Message):
+def list_admin(bot: telebot.TeleBot, message: types.Message, callback=""):
     if not is_user_admin(message.chat.id):
         bot.send_message(message.chat.id, "У вас недостаточно прав, для входа в админ систему")
         return
 
-    kb_list_admins = users_list("remove_admin", "back_admin_control", admins)
+    kb_list_admins = users_list(callback, "back_admin_control", config.admins)
 
     bot.edit_message_text(
         "Выбитите Админы",
@@ -170,25 +170,25 @@ def updater():
         return dict
 
     while True:
-        if not os.path.exists(white_list_path):
-            with open(white_list_path, 'w', encoding="utf-8") as f:
+        if not os.path.exists(config.white_list_path):
+            with open(config.white_list_path, 'w', encoding="utf-8") as f:
                 f.write(json.dumps(white_list, indent=4, sort_keys=True))
 
-        if not os.path.exists(ban_list_path):
-            with open(ban_list_path, 'w', encoding="utf-8") as f:
+        if not os.path.exists(config.ban_list_path):
+            with open(config.ban_list_path, 'w', encoding="utf-8") as f:
                 f.write(json.dumps(ban_list, indent=4, sort_keys=True))
 
-        if not os.path.exists(admins_list_path):
-            with open(admins_list_path, 'w', encoding="utf-8") as f:
+        if not os.path.exists(config.admins_list_path):
+            with open(config.admins_list_path, 'w', encoding="utf-8") as f:
                 f.write(json.dumps(admins, indent=4, sort_keys=True))
 
-        with open(admins_list_path, 'r', encoding="utf-8") as f:
+        with open(config.admins_list_path, 'r', encoding="utf-8") as f:
             admins = rewrite_keys_to_int(json.load(f))
 
-        with open(white_list_path, 'r', encoding="utf-8") as f:
+        with open(config.white_list_path, 'r', encoding="utf-8") as f:
             white_list = rewrite_keys_to_int(json.load(f))
 
-        with open(ban_list_path, 'r', encoding="utf-8") as f:
+        with open(config.ban_list_path, 'r', encoding="utf-8") as f:
             ban_list = rewrite_keys_to_int(json.load(f))
 
         time.sleep(60)

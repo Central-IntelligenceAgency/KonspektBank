@@ -4,18 +4,20 @@ from qa_helper import qa_helper
 from cliking import callback_query
 from InterfaceUtils import last_messages
 from _log import info
-from admin import *
+import admin
+import config
+import telebot
 
 
-bot = telebot.TeleBot(token)
+bot = telebot.TeleBot(config.token)
 
 
 def is_user_allowed(user_id):
-    return user_id in white_list
+    return user_id in config.white_list
 
 
 def is_user_banned(user_id):
-    return ban_list.get(user_id, None)
+    return config.ban_list.get(user_id, None)
 
 
 @bot.message_handler(commands=['start'])
@@ -23,12 +25,12 @@ def start_bot(message: telebot.types.Message):
     user_id = message.chat.id
 
     if is_user_allowed(user_id):
-        user_name = white_list[user_id]
+        user_name = config.white_list[user_id]
         bot.send_message(message.chat.id, f"Здравствуйте, {user_name}!")
         threading.Thread(target=start_menu, args=(bot, message.chat.id)).start()
 
     elif is_user_banned(user_id):
-        reason_ban = ban_list[user_id]
+        reason_ban = config.ban_list[user_id]
         bot.send_message(message.chat.id, f"Внимание!\n\n На вашем аккаунте обнаружен бан.\n\n Причина:\n"
                                           f"{reason_ban}")
         return
@@ -45,7 +47,7 @@ def start_helper(message: telebot.types.Message):
 @bot.message_handler(commands=['admin'])
 def start_helper(message: telebot.types.Message):
     print(message.chat.id)
-    admin_menu(bot, message, message.chat.id)
+    admin.admin_menu(bot, message, message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -60,5 +62,5 @@ def message_handler(message: telebot.types.Message):
 
 
 if __name__ == "__main__":
-    threading.Thread(target=updater).start()
+    threading.Thread(target=admin.updater).start()
     bot.polling()
