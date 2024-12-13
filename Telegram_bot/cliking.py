@@ -7,6 +7,7 @@ from menu import start_menu
 from text import *
 from Attachments import Photo, Document, Attachment
 from admin import *
+import math
 
 upload_limits = {}
 
@@ -23,27 +24,51 @@ subject_answers_map = {
     "Психология 🧠": psychology_replies,
 }
 
+page_db = {} #id:page
+
+def find_konspekt(i_utils, call, bot, subject=None):
+    if not subject:
+        subject = i_utils.get_subject_with_cancel_action()
+        if not subject:
+            return
+    file_paths = try_search_files(subject)
+    max_pages = int(math.ceil(len(file_paths) / page_step))
+    current_page_files = file_paths[page_db[call.message.chat.id]:page_db[call.message.chat.id] + page_step]
+    current_page = int(math.ceil((page_db[call.message.chat.id]+page_step) / page_step))
+
+    if not current_page_files:
+        bot.send_message(call.message.chat.id, "Файлов нету 😭😭")
+        return
+    bot.send_message(call.message.chat.id, f"Вот файлы по {subject}:")
+    for i, file in enumerate(current_page_files):
+        with open(file.file_path, "rb") as files:
+            bot.send_document(call.message.chat.id, files, None,
+                              f"Файл {i+1}; Описание: {file.description.get("description")}")
+    if max_pages > 1 and current_page < max_pages:
+        bot.send_message(call.message.chat.id, f"Это ещё не всё!\nСтраница {current_page}/{max_pages}",
+                         reply_markup=types.InlineKeyboardMarkup([[
+                             types.InlineKeyboardButton(text=f"Следующая",
+                                                        callback_data=f"next_page+{call.message.chat.id}+{subject}")
+                         ]]))
+
+    info(f"Sent files to {call.from_user.username}")
 
 def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
     i_utils = InterfaceUtils(bot, call, subject_answers_map)
     if call.data == 'find_konspekt':
-        subject = i_utils.get_subject_with_cancel_action()
-        if not subject:
-            return
-        file_paths = try_search_files(subject)
+        page_db[call.message.chat.id] = 0
+        find_konspekt(i_utils, call, bot)
 
-        if not file_paths:
-            bot.send_message(call.message.chat.id, "Файлов нету 😭😭")
-            return
-
-        for file in file_paths:
-            with open(file.file_path, "rb") as files:
-                bot.send_document(call.message.chat.id, files, None,
-                                  f"Описание: {file.description.get("description")}")
-        info(f"Sent files to {call.from_user.username}")
+    if "next_page" in call.data:
+        bot.delete_message(call.message.chat.id, call.message.id)
+        id = int(call.data.split("+")[1])
+        if id in page_db:
+            page_db[id] += page_step # + 1 page
+        find_konspekt(i_utils, call, bot, call.data.split("+")[2]) # send files
 
     if call.data == 'find_sum':
         subject = i_utils.get_subject_with_cancel_action()
+
         subjects = len(try_search_files(subject))
         bot.send_message(call.message.chat.id, f"Найдено {subjects} файла(ов)",
                          reply_markup=types.ReplyKeyboardRemove())
