@@ -1,4 +1,4 @@
-token = "7666906148:AAG2Q0TUL4RMuv8gQo8DbEuvshkswGm2MlE"
+token = ""
 cancel_naming = "↩ Вернуться"
 white_list = {
     5160469867: "Кузьмин Марк",

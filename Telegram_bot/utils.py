@@ -37,7 +37,7 @@ def try_search_files(query) -> list[FileWithDescription]:
 
     for file in os.listdir("Files"):
         if query in file:
-            files.append(FileWithDescription(f"Files\\{file}", try_get_description(f"Files\\{file}")))
+            files.append(FileWithDescription(f"Files/{file}", try_get_description(f"Files/{file}")))
 
     return files
 

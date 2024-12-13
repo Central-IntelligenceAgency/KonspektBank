@@ -172,15 +172,15 @@ def updater():
     while True:
         if not os.path.exists(config.white_list_path):
             with open(config.white_list_path, 'w', encoding="utf-8") as f:
-                f.write(json.dumps(white_list, indent=4, sort_keys=True))
+                f.write(json.dumps(config.white_list, indent=4, sort_keys=True))
 
         if not os.path.exists(config.ban_list_path):
             with open(config.ban_list_path, 'w', encoding="utf-8") as f:
-                f.write(json.dumps(ban_list, indent=4, sort_keys=True))
+                f.write(json.dumps(config.ban_list, indent=4, sort_keys=True))
 
         if not os.path.exists(config.admins_list_path):
             with open(config.admins_list_path, 'w', encoding="utf-8") as f:
-                f.write(json.dumps(admins, indent=4, sort_keys=True))
+                f.write(json.dumps(config.admins, indent=4, sort_keys=True))
 
         with open(config.admins_list_path, 'r', encoding="utf-8") as f:
             admins = rewrite_keys_to_int(json.load(f))
