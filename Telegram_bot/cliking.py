@@ -121,7 +121,7 @@ def callback_query(call: types.CallbackQuery, bot: telebot.TeleBot):
 
     if call.data == "add_file":
         if call.from_user.id in upload_limits and not admin.is_user_admin(call.message.chat.id):
-            if upload_limits[call.from_user.id] >= 3:
+            if upload_limits[call.from_user.id] >= config.day_rate_limit:
                 bot.send_message(call.message.chat.id, "Вы превысили лимит на день!", reply_markup=return_keyboard)
                 return
         id = f"{uuid.uuid4()}".replace("-", "+")
@@ -228,11 +228,11 @@ def HandleFile(bot: telebot.TeleBot, message: types.Message) -> list[Attachment]
         if not size:
             return False
         if admin.is_user_admin(message.chat.id):
-            if size / 1024 / 1024 > 500:
+            if size / 1024 / 1024 > config.admin_upload_limit:
                 bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
                 return False
             return True
-        if size / 1024 / 1024 > 100:
+        if size / 1024 / 1024 > config.upload_limit:
             bot.send_message(message.chat.id, "файл слишком большой, он не может быть загружен")
             return False
         return True
