@@ -45,4 +45,4 @@ admins_list_path = "admins_list.json"
 page_step = 5
 upload_limit = 100 #mb
 admin_upload_limit = 500 #mb
-day_rate_limit = 3
+day_rate_limit = 10

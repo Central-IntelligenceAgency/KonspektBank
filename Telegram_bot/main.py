@@ -64,4 +64,4 @@ def message_handler(message: telebot.types.Message):
 if __name__ == "__main__":
     threading.Thread(target=admin.updater).start()
     threading.Thread(target=upload_limits_updater).start()
-    bot.polling()
+    bot.infinity_polling()
